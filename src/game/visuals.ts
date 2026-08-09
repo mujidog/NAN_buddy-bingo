@@ -18,26 +18,32 @@ const noise = (i: number, code: number) => {
 };
 
 /**
- * A few characters of Buddy's speech rot once the dread is deep.
+ * Buddy's speech gets shoved apart once the dread is deep: `차갑다` → `차@갑다`.
  *
- * Tuning knob — keep it stingy. At the old 0.05/0.10/0.16 it ate 4 of 45
- * characters and round 2 was already speckled, which read as a broken font
- * rather than something wrong with him. One mangled character in a sentence
- * lands; five is noise, and it fights the hand-authored glitch text in the
- * round-3 death lines (those bypass this entirely via rawBubble).
+ * Inserts rather than replaces. Substitution ate whole syllables, so a line
+ * could lose the one word the riddle turned on — and no rate was low enough to
+ * be safe, because the damage was luck of the draw. Wedging a glyph between
+ * characters keeps every original character on screen, so the sentence stays
+ * readable no matter how many land.
+ *
+ * Tuning knob: rate is the chance per character. Round-3 death lines are
+ * hand-corrupted already and bypass this entirely via rawBubble.
  */
 export const glitchText = (text: string, d: number) => {
   const rate = d > 0.9 ? 0.05 : d > 0.75 ? 0.03 : 0;
   if (!rate) return text;
-  return text
-    .split('')
-    .map((ch, i) => {
-      if (ch === ' ' || ch === '\n') return ch;
-      const r = noise(i, ch.charCodeAt(0));
-      if (r >= rate) return ch;
-      return GLYPHS[Math.floor((r / rate) * GLYPHS.length) % GLYPHS.length];
-    })
-    .join('');
+
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    out += ch;
+    // never split a word from its spacing, and never before a line break
+    if (ch === ' ' || ch === '\n' || text[i + 1] === ' ' || text[i + 1] === '\n') continue;
+    if (i === text.length - 1) continue;
+    const r = noise(i, ch.charCodeAt(0));
+    if (r < rate) out += GLYPHS[Math.floor((r / rate) * GLYPHS.length) % GLYPHS.length];
+  }
+  return out;
 };
 
 const letterSpacing = (d: number) => (d > 0.8 ? '1.5px' : d > 0.55 ? '1px' : d > 0.3 ? '0.5px' : 'normal');
