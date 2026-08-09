@@ -1,4 +1,5 @@
 import type { BuddyGame, GameState } from '../game/BuddyGame';
+import { detectHost, wallpaper } from '../game/host';
 import { KO_FONT, MONO_FONT, PIXEL_FONT, bevel } from '../ui';
 
 const DARK = '#6b6b6b';
@@ -57,16 +58,20 @@ function TitleButton({ label }: { label: string }) {
   );
 }
 
+// read once: the player is not switching OS mid-jumpscare
+const HOST = detectHost();
+
 export function DesktopScreen({ state, game }: { state: GameState; game: BuddyGame }) {
+  const L = HOST.labels;
   // The desktop sits empty until the scare; the notepad turning up afterwards is
   // what reads as "he opened it", instead of a window typing to nobody.
   const notepadOpen = state.deskText !== '' || state.deskDialog;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#0d3f3f', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0, background: wallpaper(HOST), overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 34, top: 34, display: 'flex', flexDirection: 'column', gap: 34 }}>
-        <DesktopIcon label="내 컴퓨터" color="#c0c0c0" />
-        <DesktopIcon label="휴지통" color="#9aa39a" />
+        <DesktopIcon label={L.computer} color="#c0c0c0" />
+        <DesktopIcon label={L.trash} color="#9aa39a" />
         <DesktopIcon label="BUDDY.exe" color="#eb0000" pixel onClick={() => game.restart()} />
       </div>
 
@@ -108,7 +113,7 @@ export function DesktopScreen({ state, game }: { state: GameState; game: BuddyGa
             padding: '0 10px',
           }}
         >
-          <span style={{ fontFamily: KO_FONT, fontSize: 24, color: '#fff' }}>제목 없음 - 메모장</span>
+          <span style={{ fontFamily: KO_FONT, fontSize: 24, color: '#fff' }}>{`${L.untitled} - ${L.notepad}`}</span>
           <div style={{ display: 'flex', gap: 6 }}>
             <TitleButton label="_" />
             <TitleButton label="□" />
@@ -127,7 +132,7 @@ export function DesktopScreen({ state, game }: { state: GameState; game: BuddyGa
             color: '#1a1c1c',
           }}
         >
-          {['파일', '편집', '서식', '보기', '도움말'].map((m) => (
+          {L.file.map((m) => (
             <span key={m}>{m}</span>
           ))}
         </div>
@@ -172,11 +177,11 @@ export function DesktopScreen({ state, game }: { state: GameState; game: BuddyGa
           }}
         >
           <div style={{ height: 44, background: '#00007b', display: 'flex', alignItems: 'center', padding: '0 10px' }}>
-            <span style={{ fontFamily: KO_FONT, fontSize: 24, color: '#fff' }}>메모장</span>
+            <span style={{ fontFamily: KO_FONT, fontSize: 24, color: '#fff' }}>{L.notepad}</span>
           </div>
           <div style={{ padding: '30px 28px', display: 'flex', flexDirection: 'column', gap: 26 }}>
             <span style={{ fontFamily: KO_FONT, fontSize: 30, color: '#1a1c1c', lineHeight: 1.45 }}>
-              변경 내용을 저장하시겠습니까?
+              {L.savePrompt(`${L.untitled}.txt`)}
             </span>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
               {[
@@ -223,11 +228,11 @@ export function DesktopScreen({ state, game }: { state: GameState; game: BuddyGa
       >
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <span style={{ fontFamily: KO_FONT, fontSize: 22, color: '#1a1c1c', background: '#c0c0c0', ...bevel('up', 4, DARK), padding: '7px 20px' }}>
-            시작
+            {L.start}
           </span>
           {notepadOpen && (
             <span style={{ fontFamily: KO_FONT, fontSize: 20, color: '#1a1c1c', background: '#b4b0a6', ...bevel('down', 4, DARK), padding: '8px 20px' }}>
-              제목 없음 - 메모장
+              {`${L.untitled} - ${L.notepad}`}
             </span>
           )}
         </div>

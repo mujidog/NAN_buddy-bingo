@@ -320,6 +320,10 @@ export class BuddyGame {
   }
 
   begin() {
+    // Fullscreen hides the browser chrome, so the fake desktop at the end is not
+    // sitting inside an obvious tab. Must be called from the click that started
+    // the game — browsers only grant it on a user gesture. Failure is fine.
+    document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
     this.introDone = false;
     this.setState({ homeGone: false, screen: 'play' }, () => this.startRound(this.config.startRound));
   }
@@ -829,6 +833,8 @@ export class BuddyGame {
   /** Pretends the game window closed, then reveals a desktop that was never safe. */
   private fakeClose() {
     this.clear();
+    // leaving fullscreen right as the window "closes" reads as the app quitting
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     this.setState({ screen: 'blackout', deskText: '', deskDialog: false, scare: false });
     this.later(() => {
       // Beat 1: an ordinary desktop, and nothing happens. Long enough that the
