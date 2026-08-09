@@ -61,6 +61,8 @@ export interface GameState {
   homeGone: boolean;
   loadBg: string;
   loadKind: 'clear' | 'fail';
+  /** how long the loading screen will sit there, so the bar can fill for exactly that */
+  loadMs: number;
   /** 0 none, then 1..4 as the program comes apart at the end of round 3 */
   crash: number;
   deskText: string;
@@ -96,6 +98,7 @@ const initialState = (config: GameConfig): GameState => ({
   homeGone: false,
   loadBg: '#0aa300',
   loadKind: 'clear',
+  loadMs: 2500,
   crash: 0,
   deskText: '',
   deskDialog: false,
@@ -103,7 +106,7 @@ const initialState = (config: GameConfig): GameState => ({
 });
 
 /** Round 2 gives you this long to answer before the heart it is eating runs out. */
-const ANSWER_SECS = 20;
+const ANSWER_SECS = 40;
 const DECAY_TICK_MS = 100;
 
 /** Dread floor and range per round — round 3 starts already deep in the red. */
@@ -239,6 +242,7 @@ export class BuddyGame {
 
   /** Shift+1/2/3 jump rounds, Shift+4 kills you, Shift+0 fakes the window close. */
   private onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') return this.skip();
     if (!e.shiftKey) return;
     const jump = (r: Round) => this.setState({ screen: 'play' }, () => this.startRound(r));
     if (e.key === '!' || e.key === '1') jump(1);
@@ -254,6 +258,9 @@ export class BuddyGame {
     clearTimeout(this.glitchT);
     clearTimeout(this.nudgeT);
     clearTimeout(this.flipT);
+    // an abandoned speech chain leaves its advance callback behind; skip() would
+    // then call a dead closure, hit the token guard, and do nothing at all
+    this.pendingAdvance = undefined;
     // the notepad types on its own interval; leaving it running past a reset
     // kept filling deskText, which re-opened the window during the quiet beat
     clearInterval(this.deskIv);
@@ -765,7 +772,7 @@ export class BuddyGame {
     kind: 'clear' | 'fail' = 'clear',
   ) {
     this.clear();
-    this.setState({ screen: 'loading', bubble: text, buddy: img, loadBg: bg, loadKind: kind });
+    this.setState({ screen: 'loading', bubble: text, buddy: img, loadBg: bg, loadKind: kind, loadMs: ms });
     this.later(() => {
       this.setState({ screen: 'play' });
       then();

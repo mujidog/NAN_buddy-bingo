@@ -156,22 +156,16 @@ export const homeStyle = (d: number): CSSProperties => ({
   cursor: 'pointer',
 });
 
-/** Tucked under the speech bubble's tail so it never covers the board. */
-export const skipStyle = (d: number): CSSProperties => ({
+/** The blinking ▼ every visual novel puts on a line you can click past. */
+export const nextArrowStyle = (d: number): CSSProperties => ({
   position: 'absolute',
-  left: 1180,
-  top: 352,
-  fontFamily: "'Press Start 2P'",
-  fontSize: 13,
-  color: d > 0.4 ? '#e3e2e2' : '#3b4b35',
-  background: d > 0.4 ? '#3a2020' : '#e8e8e8',
-  borderTop: '3px solid #fff',
-  borderLeft: '3px solid #fff',
-  borderRight: '3px solid #808080',
-  borderBottom: '3px solid #808080',
-  padding: '8px 12px',
-  cursor: 'pointer',
-  zIndex: 5,
+  right: 74,
+  bottom: 74,
+  fontSize: 30,
+  lineHeight: 1,
+  color: d > 0.55 ? '#7a1414' : '#3b4b35',
+  animation: 'blink 1s steps(1) infinite',
+  pointerEvents: 'none',
 });
 
 /**
@@ -308,12 +302,17 @@ export const loadBarWrapStyle = (s: GameState): CSSProperties => ({
 
 export const loadBarStyle = (s: GameState): CSSProperties => ({
   height: '100%',
-  width: s.loadKind === 'fail' ? '38%' : '100%',
   background:
     s.loadKind === 'fail'
       ? 'repeating-linear-gradient(90deg,#eb0000 0 12px,#3a0000 12px 24px)'
       : 'repeating-linear-gradient(90deg,#02e600 0 12px,#015300 12px 24px)',
-  transition: 'width 2.6s steps(12)',
+  // The bar used to mount already at its final width, so the transition never
+  // ran and it just appeared full. It now fills over the screen's real duration
+  // (a recovering run stalls partway). The resting width is the *end* state, so
+  // if animations are off — reduced-motion, a throttled tab — it degrades to the
+  // old always-full bar rather than an empty one that never moves.
+  width: s.loadKind === 'fail' ? '38%' : '100%',
+  animation: `${s.loadKind === 'fail' ? 'loadstall' : 'loadfill'} ${s.loadMs}ms steps(24)`,
 });
 
 export const loadLabelStyle = (s: GameState): CSSProperties => ({

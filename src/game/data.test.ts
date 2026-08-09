@@ -8,8 +8,15 @@ import { FLEE, WORDS } from './data';
 const ROUNDS = [1, 2, 3] as const;
 
 describe('word banks', () => {
-  it.each(ROUNDS)('round %i fills a 5x5 board', (r) => {
-    expect(WORDS[r].length).toBeGreaterThanOrEqual(25);
+  // exactly 25, not "at least": a 26th word would silently sit out every game
+  it.each(ROUNDS)('round %i is exactly one board', (r) => {
+    expect(WORDS[r].length).toBe(25);
+  });
+
+  it('no english answer is reused across rounds', () => {
+    const all = ROUNDS.flatMap((r) => WORDS[r].map((w) => w[0]));
+    const dupes = all.filter((w, i) => all.indexOf(w) !== i);
+    expect(dupes).toEqual([]);
   });
 
   it.each(ROUNDS)('round %i has no duplicate answers', (r) => {

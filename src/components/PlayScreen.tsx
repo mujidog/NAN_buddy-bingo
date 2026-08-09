@@ -28,7 +28,7 @@ function Hearts({ lives, decay }: { lives: number; decay: number }) {
   );
 }
 
-function SpeechBubble({ text, d }: { text: string; d: number }) {
+function SpeechBubble({ text, d, more }: { text: string; d: number; more: boolean }) {
   return (
     <div style={{ position: 'absolute', left: 520, top: 150, width: 860, height: 240 }}>
       <img src="assets/bubble_pixel.png" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
@@ -47,6 +47,7 @@ function SpeechBubble({ text, d }: { text: string; d: number }) {
       >
         <span style={V.bubbleStyle(d)}>{text}</span>
       </div>
+      {more && <span style={V.nextArrowStyle(d)}>▼</span>}
     </div>
   );
 }
@@ -115,10 +116,15 @@ function BingoBoard({ state, game, d }: { state: GameState; game: BuddyGame; d: 
 
 export function PlayScreen({ state, game, d }: { state: GameState; game: BuddyGame; d: number }) {
   const crash = state.crash;
+  // he is mid-sentence: the board is inert anyway, so a stage click is free to skip
+  const skippable = !crash && state.blocked && state.bubble !== '' && !state.rawBubble;
   const showHome = !crash && state.screen === 'play' && (state.round === 1 || (state.round === 2 && !state.homeGone));
 
   return (
-    <div style={{ ...V.stageStyle(state.shake), ...V.crashStageStyle(crash) }}>
+    <div
+      style={{ ...V.stageStyle(state.shake), ...V.crashStageStyle(crash) }}
+      onClick={() => skippable && game.skip()}
+    >
       <img src="assets/bg_forest.png" alt="" style={V.dayBgStyle(d)} />
       <img src="assets/bg_forest_night.png" alt="" style={V.nightBgStyle(d)} />
       <div style={V.dreadStyle(d)} />
@@ -151,14 +157,8 @@ export function PlayScreen({ state, game, d }: { state: GameState; game: BuddyGa
             : V.glitchText(state.bubble.slice(0, state.typedLen), d)
         }
         d={d}
+        more={skippable}
       />
-
-      {/* only while he is actually mid-sentence, so it is never a dead button */}
-      {!crash && state.blocked && state.bubble !== '' && !state.rawBubble && (
-        <button className="bevel-up" onClick={() => game.skip()} style={V.skipStyle(d)}>
-          SKIP ▶▶
-        </button>
-      )}
 
       <BingoBoard state={state} game={game} d={d} />
 
