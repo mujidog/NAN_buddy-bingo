@@ -17,9 +17,17 @@ const noise = (i: number, code: number) => {
   return ((h ^ (h >>> 13)) >>> 0) / 4294967296;
 };
 
-/** Above ~0.5 dread Buddy's speech starts corrupting character by character. */
+/**
+ * A few characters of Buddy's speech rot once the dread is deep.
+ *
+ * Tuning knob — keep it stingy. At the old 0.05/0.10/0.16 it ate 4 of 45
+ * characters and round 2 was already speckled, which read as a broken font
+ * rather than something wrong with him. One mangled character in a sentence
+ * lands; five is noise, and it fights the hand-authored glitch text in the
+ * round-3 death lines (those bypass this entirely via rawBubble).
+ */
 export const glitchText = (text: string, d: number) => {
-  const rate = d > 0.85 ? 0.16 : d > 0.7 ? 0.1 : d > 0.5 ? 0.05 : 0;
+  const rate = d > 0.9 ? 0.05 : d > 0.75 ? 0.03 : 0;
   if (!rate) return text;
   return text
     .split('')
@@ -199,7 +207,8 @@ export const bubbleStyle = (d: number): CSSProperties => ({
   wordBreak: 'keep-all',
   textWrap: 'balance',
   letterSpacing: letterSpacing(d),
-  filter: d > 0.8 ? 'blur(0.6px)' : 'none',
+  // 0.6px smeared every stroke; this is just enough to read as a tired CRT
+  filter: d > 0.85 ? 'blur(0.25px)' : 'none',
   // no jitter animation: shaking the speech made round 3 unreadable
   // Deviates from the prototype, which collapses \n to a space: the round-2
   // riddles (letter especially) are written with deliberate line breaks.
