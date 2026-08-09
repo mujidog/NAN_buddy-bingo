@@ -1,0 +1,143 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+img {
+  image-rendering: pixelated;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes jitter {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  50% {
+    transform: translate(2px, -1px);
+  }
+  75% {
+    transform: translate(-1px, -2px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  15% {
+    transform: translate(-10px, 4px);
+  }
+  30% {
+    transform: translate(9px, -5px);
+  }
+  45% {
+    transform: translate(-7px, -3px);
+  }
+  60% {
+    transform: translate(6px, 5px);
+  }
+  75% {
+    transform: translate(-4px, 2px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes stamp {
+  0% {
+    transform: scale(2.4) rotate(-14deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(0.86) rotate(3deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 0.85;
+  }
+}
+
+@keyframes flick {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  47% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 0.55;
+  }
+  49% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  73% {
+    opacity: 0.7;
+  }
+  74% {
+    opacity: 1;
+  }
+}
+
+/* Win95 chrome: raised by default, sunken while a button is held. */
+.bevel-up:active {
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-right-color: #fff;
+  border-bottom-color: #fff;
+}
+
+/* Jumpscare: a hard scale/skew snap, no fade — the point is that it is already there. */
+@keyframes scare {
+  0% {
+    transform: scale(1.35) translate(0, 0);
+    filter: contrast(1.6) saturate(1.4);
+  }
+  50% {
+    transform: scale(1.5) translate(-1.5%, 1%);
+    filter: contrast(2.1) saturate(0.6) invert(0.06);
+  }
+  100% {
+    transform: scale(1.38) translate(1%, -0.5%);
+    filter: contrast(1.7) saturate(1.3);
+  }
+}
