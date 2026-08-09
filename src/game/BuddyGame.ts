@@ -341,6 +341,7 @@ export class BuddyGame {
 
     this.setState(
       {
+        screen: 'play',
         round,
         cells,
         shake: false,
@@ -350,6 +351,7 @@ export class BuddyGame {
         correctCount: 0,
         streak: 0,
         dieMode: false,
+        crash: 0,
         buddy: round === 3 ? IMG.HORROR : IMG.IDLE,
       },
       () => {
@@ -430,7 +432,8 @@ export class BuddyGame {
     }, ms);
   }
 
-  private speak(lines: string[], done: () => void) {
+  /** `img` pins the sprite; without it he alternates talking frames. */
+  private speak(lines: string[], done: () => void, img?: string) {
     const step = (i: number) => {
       if (this.state.screen !== 'play') return;
       if (i >= lines.length) {
@@ -439,7 +442,7 @@ export class BuddyGame {
       }
       this.bubbleToken++;
       const token = this.bubbleToken;
-      this.setState({ blocked: true, buddy: i % 2 ? IMG.TALK : IMG.HAPPY, bubble: lines[i] });
+      this.setState({ blocked: true, buddy: img ?? (i % 2 ? IMG.TALK : IMG.HAPPY), bubble: lines[i] });
       // exposed so skip() can pull the next line in early; the token check makes
       // the original timer a no-op once it has already fired
       const go = () => {
@@ -603,18 +606,23 @@ export class BuddyGame {
 
     if (s.round === 3 && count >= 3 && !s.dieMode) this.later(() => this.corruptBoard(), 600);
 
+    const before = this.countLines(s.cells);
     const lines = this.countLines(cells);
-    if (lines > this.countLines(s.cells) && lines < 3) {
-      this.setState({ bubble: LINE_PROGRESS[s.round][Math.min(lines, 2) - 1] });
-    }
 
-    this.later(() => {
+    const next = () => {
       if (lines >= 3) this.roundClear();
       else {
         this.setState({ buddy: s.round === 3 ? IMG.HORROR : IMG.IDLE });
         this.ask();
       }
-    }, T[s.round].ok);
+    };
+
+    // Announce each line that just closed. Indexing by the new total meant a
+    // move that closed two at once skipped "한 줄 완성", and one that jumped
+    // straight to three said nothing at all — the tile at a crossing does that.
+    const announce = LINE_PROGRESS[s.round].slice(before, Math.min(lines, 2));
+    if (announce.length) this.speak([...announce], next, buddy);
+    else this.later(next, T[s.round].ok);
   }
 
   /** The round-2 answer clock ran out: costs a life, but burns no tile. */
@@ -773,10 +781,10 @@ export class BuddyGame {
   ) {
     this.clear();
     this.setState({ screen: 'loading', bubble: text, buddy: img, loadBg: bg, loadKind: kind, loadMs: ms });
-    this.later(() => {
-      this.setState({ screen: 'play' });
-      then();
-    }, ms);
+    // then() is startRound, which switches the screen itself. Flipping to 'play'
+    // here first painted one frame of the round that just ended — the board and
+    // dread of round 2 flashing before round 3 replaced them.
+    this.later(then, ms);
   }
 
   /**
