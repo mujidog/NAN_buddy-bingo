@@ -131,20 +131,20 @@ export const headerStyle = (d: number): CSSProperties => ({
 });
 
 export const headerTitleStyle = (d: number): CSSProperties => ({
-  fontFamily: "'Press Start 2P'",
+  fontFamily: "'Press Start 2P', 'Courier New', monospace",
   fontSize: 20,
   color: d > 0.55 ? '#eb0000' : '#bc0100',
   letterSpacing: d > 0.4 ? '1.5px' : 'normal',
 });
 
 export const headerMetaStyle = (d: number): CSSProperties => ({
-  fontFamily: "'Press Start 2P'",
+  fontFamily: "'Press Start 2P', 'Courier New', monospace",
   fontSize: 16,
   color: d > 0.55 ? '#8a3b3b' : '#3b4b35',
 });
 
 export const homeStyle = (d: number): CSSProperties => ({
-  fontFamily: "'Press Start 2P'",
+  fontFamily: "'Press Start 2P', 'Courier New', monospace",
   fontSize: 13,
   color: d > 0.4 ? '#e3e2e2' : '#3b4b35',
   background: d > 0.4 ? '#3a2020' : '#e8e8e8',
@@ -189,7 +189,7 @@ export const buddyStyle = (d: number): CSSProperties => ({
 });
 
 export const bubbleStyle = (d: number): CSSProperties => ({
-  fontFamily: "'Do Hyeon'",
+  fontFamily: "'Do Hyeon', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif",
   fontSize: 36,
   color: '#1a1c1c',
   lineHeight: 1.35,
@@ -267,7 +267,7 @@ export const cellView = (c: Cell, s: GameState, d: number): CellView => {
       transition: 'opacity .35s ease',
     },
     labelStyle: {
-      fontFamily: "'Courier Prime'",
+      fontFamily: "'Courier Prime', 'Courier New', monospace",
       fontWeight: 700,
       fontSize: 26,
       letterSpacing: letterSpacing(d),
@@ -316,7 +316,7 @@ export const loadBarStyle = (s: GameState): CSSProperties => ({
 });
 
 export const loadLabelStyle = (s: GameState): CSSProperties => ({
-  fontFamily: "'Press Start 2P'",
+  fontFamily: "'Press Start 2P', 'Courier New', monospace",
   fontSize: 16,
   letterSpacing: '2px',
   color: s.loadKind === 'fail' ? '#eb0000' : '#e3e2e2',

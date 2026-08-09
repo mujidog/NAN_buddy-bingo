@@ -11,6 +11,6 @@ export const bevel = (dir: 'up' | 'down', w: number, dark = '#808080', light = '
   };
 };
 
-export const PIXEL_FONT = "'Press Start 2P'";
-export const MONO_FONT = "'Courier Prime'";
-export const KO_FONT = "'Do Hyeon'";
+export const PIXEL_FONT = "'Press Start 2P', 'Courier New', monospace";
+export const MONO_FONT = "'Courier Prime', 'Courier New', monospace";
+export const KO_FONT = "'Do Hyeon', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";

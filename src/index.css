@@ -153,3 +153,26 @@ input {
   70% { width: 34%; }
   100% { width: 38%; }
 }
+
+/*
+ * This game flashes a lot — glitch frames, scanline flicker, a jumpscare. That is
+ * a real hazard for photosensitive players, so honour the OS setting: kill the
+ * looping effects and shorten the one-shots. The horror survives; the strobing
+ * does not. Transitions stay (near-instant) so state changes are still legible.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* the loading bar is progress, not decoration — let it run */
+  [style*='loadfill'],
+  [style*='loadstall'] {
+    animation-duration: revert !important;
+    animation-iteration-count: 1 !important;
+  }
+}
