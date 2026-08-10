@@ -1,20 +1,48 @@
 // Pull the real art out of the bundled Claude Design export.
-//   node scripts/extract-bundle.cjs "C:/Users/.../Buddy Bingo.html" [--force]
+//   node scripts/extract-bundle.cjs "C:/.../Buddy Bingo.html" [--out DIR] [--force NAME...]
 // Assets live as a UUID->base64 manifest; buddy sprites are named in
 // __bundler/ext_resources, the rest are identified by where the template uses them.
 //
-// Existing files are KEPT, never overwritten. The bundle ships the `assets/min/`
-// downscales, and at least one of them (buddy_horror) is a bad crop that was
-// replaced by hand — re-running this must not undo that. Pass --force to
-// overwrite anyway, then re-apply your replacements.
+// Existing files are KEPT, never overwritten. Several sprites in the bundle are
+// bad crops that were replaced by hand, and re-running this must not undo that.
+//
+// Overwriting is deliberately awkward. `--force` takes the filenames to replace
+// (`--force buddy_idle.png`); a bare `--force` used to mean "all of them", which
+// is how four hand-fixed sprites got clobbered by someone only trying to look at
+// what the bundle contained. Use `--out` for that — it writes somewhere else
+// entirely, so nothing in public/assets is at risk.
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const args = process.argv.slice(2);
-const force = args.includes('--force');
-const src = args.find((a) => !a.startsWith('--')) || path.join(process.env.USERPROFILE || '', 'Downloads', 'Buddy Bingo.html');
-const outDir = path.join(__dirname, '..', 'public', 'assets');
+const argv = process.argv.slice(2);
+const positional = [];
+const forceNames = new Set();
+let outDir = path.join(__dirname, '..', 'public', 'assets');
+let mode = null; // which flag is currently collecting values
+
+const die = (msg) => {
+  console.error('error: ' + msg);
+  console.error('usage: node scripts/extract-bundle.cjs <bundle.html> [--out DIR] [--force NAME...]');
+  process.exit(1);
+};
+
+for (const a of argv) {
+  if (a === '--out') { mode = 'out'; continue; }
+  if (a === '--force') { mode = 'force'; continue; }
+  if (a.startsWith('--out=')) { outDir = path.resolve(a.slice(6)); mode = null; continue; }
+  if (a.startsWith('--')) die('unknown flag ' + a);
+  if (mode === 'out') { outDir = path.resolve(a); mode = null; continue; }
+  if (mode === 'force') { forceNames.add(a); continue; }
+  positional.push(a);
+}
+
+// The original silently dropped everything after the first positional, so a
+// second one meant as an output directory vanished without a word.
+if (positional.length > 1) die('unexpected argument "' + positional[1] + '" — did you mean --out ' + positional[1] + '?');
+if (argv.includes('--force') && forceNames.size === 0) die('--force needs the filenames to overwrite, e.g. --force buddy_idle.png');
+
+const src = positional[0] || path.join(process.env.USERPROFILE || '', 'Downloads', 'Buddy Bingo.html');
 const html = fs.readFileSync(src, 'utf8');
 
 const section = (type) => {
@@ -90,8 +118,8 @@ for (const [uuid, name] of named) {
     continue;
   }
   const dest = path.join(outDir, name);
-  if (fs.existsSync(dest) && !force) {
-    console.log('kept  ', name, '(already present — --force to overwrite)');
+  if (fs.existsSync(dest) && !forceNames.has(name)) {
+    console.log('kept  ', name, `(already present — --force ${name} to overwrite)`);
     kept++;
     continue;
   }
@@ -106,4 +134,6 @@ const missing = Object.values(NAME_BY_ID)
   .concat(['bubble_pixel.png', 'heart_empty.png', 'heart_full.png', 'bg_forest.png', 'bg_forest_night.png'])
   .filter((n) => ![...named.values()].includes(n));
 if (missing.length) console.warn('! unresolved:', missing.join(', '));
+const unmatched = [...forceNames].filter((n) => ![...named.values()].includes(n));
+if (unmatched.length) console.warn('! --force named files the bundle has no asset for:', unmatched.join(', '));
 console.log(`${written} written, ${kept} kept — ${outDir}`);
