@@ -90,7 +90,7 @@ export default function App() {
           transformOrigin: 'top left',
         }}
       >
-        {state.screen === 'title' && <TitleScreen game={game} name={state.name} />}
+        {state.screen === 'title' && <TitleScreen game={game} />}
         {showPlay && <PlayScreen state={state} game={game} d={d} />}
         {state.screen === 'loading' && <LoadingScreen state={state} />}
         {state.screen === 'blackout' && <div style={{ position: 'absolute', inset: 0, background: '#000' }} />}

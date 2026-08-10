@@ -1,9 +1,9 @@
 import type { BuddyGame } from '../game/BuddyGame';
 import { IMG } from '../game/data';
-import { MONO_FONT, PIXEL_FONT, bevel } from '../ui';
+import { PIXEL_FONT, bevel } from '../ui';
 import { SettingsMenu } from './SettingsMenu';
 
-export function TitleScreen({ game, name }: { game: BuddyGame; name: string }) {
+export function TitleScreen({ game }: { game: BuddyGame }) {
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       <img
@@ -79,25 +79,6 @@ export function TitleScreen({ game, name }: { game: BuddyGame; name: string }) {
         </div>
 
         <div style={{ padding: '26px 34px 0 34px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* No name field: a player-chosen handle turns Buddy's lines comic.
-              The tag is assigned, and shown so the name in his dialogue lands. */}
-          <span style={{ fontFamily: PIXEL_FONT, fontSize: 20, color: '#1a1c1c' }}>Player:</span>
-          <div
-            style={{
-              height: 60,
-              background: '#fff',
-              ...bevel('down', 5),
-              fontFamily: MONO_FONT,
-              fontWeight: 700,
-              fontSize: 28,
-              padding: '0 16px',
-              color: '#1a1c1c',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {name}
-          </div>
           <button
             className="bevel-up"
             onClick={() => game.begin()}

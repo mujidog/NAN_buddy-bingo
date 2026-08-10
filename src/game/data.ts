@@ -98,7 +98,7 @@ export const WORDS: Record<Round, readonly WordTuple[]> = {
   ],
 };
 
-/** Round 3 turns these into unclickable DIE tiles once Buddy corrupts the board. */
+/** Round 3: pressing one of these costs a heart and burns the tile to DIE. */
 export const FLEE = ['escape', 'run', 'hide', 'leave', 'forget'];
 
 // Round 3 has no way out: it ends in 'bad' on three lines, or 'death' on a FLEE
@@ -165,19 +165,21 @@ export const SAY: Record<Round, RoundVoice> = {
     ok: ['정답! 역시 넌 똑똑해!', '딩동댕! 잘했어, 친구!', '맞았어! 계속 이렇게만 해줘!'],
     no: ['앗, 아니야. 괜찮아, 다시 해보자!', '삐-! 조금 아쉬웠어. 잘 봐봐!', '음, 틀렸네. 그럴 수도 있지 뭐!'],
     last: '한 번만 더 틀리면… 안 돼. 잘 해보자.',
-    nudge: ['어때? 어렵진 않지?', '천천히 골라도 괜찮아!', '여기 있어. 기다릴게!'],
+    // nudges read as a new question if they sound like a prompt — keep them
+    // clearly about the waiting, never about the word
+    nudge: ['…기다리고 있어.', '천천히 해도 괜찮아.', '나 여기 있어.'],
   },
   2: {
-    ok: ['맞아. 잘 알고 있네. 어디서 배웠어?', '정답. 너 이 단어 전에도 본 적 있지?', '그래, 그거야. 기억력이 좋구나.'],
+    ok: ['맞아. 잘 아네.', '정답. 너 이 단어 알고 있었구나.', '그래, 그거야.'],
     no: ['틀렸어. 근데 왜 그걸 골랐을까?', '아니야. 지금 뭘 생각하고 있었어?', '그건 아니지. 손이 먼저 움직였네.'],
     last: '이제 하나 남았어. 나는 아직 안 급한데.',
-    nudge: ['고민 중이야? 나도 기다리는 거 좋아해.', '…아직이야?', '그 단어, 아까부터 계속 보고 있잖아.'],
+    nudge: ['…아직이야?', '나는 기다리는 거 좋아해.', '천천히 해. 시간은 많으니까.'],
   },
   3: {
-    ok: ['맞았습니다. 한 칸 더 가까워졌네요.', '정답이에요. 계속 채워줘요.', '맞아요. 이 줄이 완성되면 어떻게 될까요.'],
-    no: ['틀렸어요. 하나 가져갈게요.', '아니에요. 괜찮아요, 아직 남았잖아요.', '그건 아니었어요. 조금만 더 있으면 되는데.'],
-    last: '하나 남았네요. 이제 진짜 곧이에요.',
-    nudge: ['왜 안 눌러요.', '손이 안 움직여요?', '여기요. 여기 보고 있잖아요.', '…', '괜찮아요. 어차피 시간은 내 편이니까.'],
+    ok: ['맞았어. 한 칸 더 가까워졌네.', '정답이야. 계속 채워줘.', '맞아. 이 줄이 완성되면 어떻게 될까.'],
+    no: ['틀렸어. 하나 가져갈게.', '아니야. 괜찮아, 아직 남았잖아.', '그건 아니었어. 조금만 더 있으면 되는데.'],
+    last: '하나 남았네. 이제 진짜 곧이야.',
+    nudge: ['…왜 안 눌러.', '손이 안 움직여?', '…', '괜찮아. 시간은 내 편이니까.'],
   },
 };
 
@@ -185,11 +187,18 @@ export const SAY: Record<Round, RoundVoice> = {
 export const LINE_PROGRESS: Record<Round, readonly [string, string]> = {
   1: ['한 줄 완성! 우와, 너 진짜 잘하는구나!', '두 줄째야! 이러다 다 맞추겠는데?'],
   2: ['한 줄 됐네. 너 이런 거 해본 적 있지?', '두 줄. …이제 딱 하나 남았어.'],
-  3: ['한 줄. 좋아요, 계속해요.', '두 줄이에요. 이제 진짜 얼마 안 남았어요.'],
+  3: ['한 줄. 좋아, 계속해.', '두 줄. 이제 진짜 얼마 안 남았어.'],
 };
 
-export const INTRO = (name: string) => [
-  '안녕! 난 버디야. 만나서 반가워, ' + name + '!',
+/** Said when the third line lands, before the round actually turns over. */
+export const BINGO: Record<Round, string> = {
+  1: '빙고! 세 줄이야! 네 승리야, 정말 잘했어!',
+  2: '빙고. 세 줄 다 채웠네. …네 승리야.',
+  3: '빙고. 다 채웠구나.\n네 승리야. 축하해.',
+};
+
+export const INTRO = [
+  '안녕! 난 버디야. 만나서 반가워!',
   '여긴 내 놀이터야. 오늘은 너랑 영어 단어 빙고를 할 거야.',
   '내가 뜻을 설명하면, 칸에서 맞는 영어 단어를 찾아 눌러줘.',
   '가로든 세로든 대각선이든, 세 줄을 만들면 다음으로 넘어갈 수 있어!',
@@ -197,28 +206,43 @@ export const INTRO = (name: string) => [
   '준비됐지? 그럼 시작하자!',
 ];
 
+/** Each round changes the rules, so each round says what changed before it starts. */
+export const ROUND_RULES: Partial<Record<Round, readonly string[]>> = {
+  2: [
+    '이번엔 조금 다르게 해보자.',
+    '이제부터 시간을 잴 거야. 오래 고민하면 하트가 조금씩 닳아.',
+    '다 닳으면 하나 잃는 거고. 어렵진 않지?',
+  ],
+  3: [
+    '마지막이야. 규칙은 하나 더 있어.',
+    '도망치려는 단어가 섞여 있어. 그런 건 누르면 안 돼.',
+    '누르면… 하트를 하나 가져갈 거야. 그 칸은 다시 못 쓰고.',
+    'HINT. 대부분 정답은 내 설명 앞부분에 있어. 이제 굳이 숨기지 않을게.',
+  ],
+};
+
 export type EndingKind = 'death' | 'bad';
 
-export const ENDING_SCRIPTS: Record<EndingKind, (name: string) => string[]> = {
-  death: (n) => [
+export const ENDING_SCRIPTS: Record<EndingKind, () => string[]> = {
+  death: () => [
     '찾았다.',
     '괜찮아. 하나도 안 아플 거야.',
     '무서웠지? 이제 안 무서워해도 돼.',
-    '여기서는 아무도 널 혼내지 않아.',
-    '잘 자, ' + n + '.',
+    '여기선 아무도 널 혼내지 않아.',
+    '푹 자.',
   ],
-  bad: (n) => [
-    '빙고. 정말 잘했어.',
-    '약속했잖아. 다 맞추면 계속 같이 있기로.',
+  bad: () => [
+    '다 채웠네. 약속대로야.',
     '이제 아침도, 학교도, 그런 거 없어도 돼.',
     '내가 매일 놀아줄게. 매일매일.',
-    '영원히 놀자, ' + n + '.',
+    '그러니까 이제,',
+    '영원히 놀자.',
   ],
 };
 
 /** Notepad text typed out after the window "closes". */
 export const DESK_SCRIPTS = {
-  caught: (n: string) => ['…어? 창을 닫았네.', '', '괜찮아. 나는 창 안에 없었어.', '', n + ', 이 메모장 네가 열었어?', '나도 아니야.'],
+  caught: () => ['…어? 창을 닫았네.', '', '괜찮아. 나는 창 안에 없었어.', '', '이 메모장, 네가 열었어?', '나도 아니야.'],
 };
 
 export const IMG = {
@@ -234,9 +258,9 @@ export const IMG = {
 
 /** qin = lockout after a question appears, ok/no = beat after an answer, nudge = idle prod. */
 export const T: Record<Round, { qin: number; ok: number; no: number; nudge: number }> = {
-  1: { qin: 400, ok: 1400, no: 1800, nudge: 20000 },
-  2: { qin: 300, ok: 1200, no: 1600, nudge: 14000 },
-  3: { qin: 200, ok: 1000, no: 1400, nudge: 7000 },
+  1: { qin: 400, ok: 2200, no: 2600, nudge: 45000 },
+  2: { qin: 300, ok: 2000, no: 2400, nudge: 40000 },
+  3: { qin: 300, ok: 2000, no: 2400, nudge: 35000 },
 };
 
 /** The 12 winning lines of a 5x5 board: 5 rows, 5 columns, 2 diagonals. */

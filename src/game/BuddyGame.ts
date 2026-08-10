@@ -1,6 +1,7 @@
 import {
   ANTONYM,
   ASK,
+  BINGO,
   DESK_SCRIPTS,
   ENDING_SCRIPTS,
   FLEE,
@@ -8,6 +9,7 @@ import {
   INTRO,
   LINE_PROGRESS,
   LINES,
+  ROUND_RULES,
   SAY,
   SKIP_SCOLD,
   T,
@@ -136,7 +138,6 @@ export class BuddyGame {
   private bubbleToken = 0;
   private introDone = false;
   private scolded = false;
-  private lastAct = 0;
   private roundStart = 0;
   /** round-2 answer clock: unblocked ms spent on the current question */
   private answerMs = 0;
@@ -219,12 +220,8 @@ export class BuddyGame {
           return;
         }
 
-        // Round 3: a slow bleed while you sit still, which never quite kills you
-        if (s.round !== 3) return;
-        if ((Date.now() - this.lastAct) / 1000 < 5) return;
-        const step = 0.0175 + this.dread() * 0.008;
-        const decay = Math.min(Math.max(0, s.lives - 1), s.decay + step);
-        if (decay !== s.decay) this.setState({ decay });
+        // Round 3 has no clock. Its hearts go to the flee tiles instead, and a
+        // timer on top of those left too little room to actually play.
       }, DECAY_TICK_MS),
     );
 
@@ -340,7 +337,6 @@ export class BuddyGame {
       dead: false,
     }));
 
-    this.lastAct = Date.now();
     this.roundStart = Date.now();
 
     this.setState(
@@ -363,18 +359,25 @@ export class BuddyGame {
         if (round === 3) this.scheduleFlip();
 
         if (round === 3) {
-          this.setState({
-            blocked: true,
-            buddy: IMG.HORROR,
-            bubble: this.state.name + '. 네가 이름을 알려준 순간부터,\n넌 여기 적혀 있었어.',
-          });
-          this.later(() => this.ask(), 3600);
+          this.setState({ blocked: true, buddy: IMG.HORROR });
+          this.speak(
+            ['넌 처음부터 여기 적혀 있었어.', ...(ROUND_RULES[3] ?? [])],
+            () => this.ask(),
+            IMG.HORROR,
+          );
+          return;
+        }
+
+        // round 2 changes the rules too, so it says what changed
+        if (round === 2) {
+          this.setState({ blocked: true, buddy: IMG.TALK });
+          this.speak([...(ROUND_RULES[2] ?? [])], () => this.ask(), IMG.TALK);
           return;
         }
 
         if (round === 1 && !this.introDone) {
           this.introDone = true;
-          this.speak(INTRO(this.state.name), () => this.ask());
+          this.speak([...INTRO], () => this.ask());
           return;
         }
 
@@ -496,7 +499,6 @@ export class BuddyGame {
       bubble: '아, 벌써 끝났어? 나는 아직 더 놀고 싶은데.\n…두 개만 채워줄게. 이번이 마지막이야.',
     });
     this.later(() => {
-      this.lastAct = Date.now();
       this.setState({ lives: 2, decay: 0, blocked: false, buddy: IMG.IDLE });
       this.scheduleGlitch();
       this.ask();
@@ -540,7 +542,6 @@ export class BuddyGame {
     if (!open.length) return this.roundFail();
 
     const t = pick(open);
-    this.lastAct = Date.now();
     // every round-2 question restarts the answer clock
     if (round === 2) {
       this.answerMs = 0;
@@ -582,9 +583,11 @@ export class BuddyGame {
 
     const c = s.cells[i];
     if (!c || c.marked || c.wrong) return;
-    if (c.dead) return this.dieSequence(c);
+    // a flee tile takes a heart and burns itself out; the round ends only when
+    // the hearts do, so one wrong grab is not instantly fatal
+    if (!c.dead && FLEE.includes(c.word) && s.round === 3) return this.fleeMark(i);
+    if (c.dead) return; // already spent
 
-    this.lastAct = Date.now();
     clearTimeout(this.nudgeT);
     if (i === s.target) this.correct(i);
     else this.wrong(i);
@@ -608,8 +611,6 @@ export class BuddyGame {
       bubble: pick(SAY[s.round].ok),
     });
 
-    if (s.round === 3 && count >= 3 && !s.dieMode) this.later(() => this.corruptBoard(), 600);
-
     const before = this.countLines(s.cells);
     const lines = this.countLines(cells);
 
@@ -624,9 +625,44 @@ export class BuddyGame {
     // Announce each line that just closed. Indexing by the new total meant a
     // move that closed two at once skipped "한 줄 완성", and one that jumped
     // straight to three said nothing at all — the tile at a crossing does that.
-    const announce = LINE_PROGRESS[s.round].slice(before, Math.min(lines, 2));
-    if (announce.length) this.speak([...announce], next, buddy);
+    const announce = [...LINE_PROGRESS[s.round].slice(before, Math.min(lines, 2))];
+    // the third line is the win — say so instead of cutting straight to loading
+    if (lines >= 3 && before < 3) announce.push(BINGO[s.round]);
+    if (announce.length) this.speak(announce, next, buddy);
     else this.later(next, T[s.round].ok);
+  }
+
+  /**
+   * A flee tile was pressed. It costs a heart and burns itself out — the round
+   * only ends when the hearts do. Turning the whole board to DIE up front and
+   * killing on the first touch left nothing to play.
+   */
+  private fleeMark(i: number) {
+    clearTimeout(this.nudgeT);
+    const s = this.state;
+    const cell = s.cells[i];
+    const lives = s.lives - 1;
+    const cells = s.cells.slice();
+    cells[i] = { ...cells[i], dead: true };
+
+    this.shakeStage();
+    this.setState({
+      cells,
+      lives,
+      streak: 0,
+      blocked: true,
+      buddy: IMG.GLITCH,
+      bubble: cell.dieLine ?? '어디가.',
+      rawBubble: !!cell.dieLine,
+    });
+    if (cell.dieLine) this.setState({ typedLen: cell.dieLine.length });
+
+    this.later(() => {
+      if (lives <= 0) return this.end('death');
+      if (this.livesLines(cells) < 3) return this.roundFail();
+      this.setState({ buddy: IMG.HORROR, rawBubble: false });
+      this.ask();
+    }, 3200);
   }
 
   /** The round-2 answer clock ran out: costs a life, but burns no tile. */
@@ -670,12 +706,6 @@ export class BuddyGame {
     }, T[s.round].no);
   }
 
-  private corruptBoard() {
-    const cells = this.state.cells.map((c) =>
-      !c.marked && FLEE.includes(c.word) ? { ...c, dead: true } : c,
-    );
-    this.setState({ dieMode: true, cells });
-  }
 
   private countLines(cells: Cell[]) {
     return LINES.filter((l) => l.every((i) => cells[i].marked)).length;
@@ -686,44 +716,17 @@ export class BuddyGame {
     return LINES.filter((l) => l.every((i) => !cells[i].wrong && !cells[i].dead)).length;
   }
 
-  private dieSequence(killer?: Cell) {
-    this.clear();
-    const cells = this.state.cells.map((c) => (c.dead ? { ...c, died: true } : c));
-
-    const line = killer?.dieLine;
-    if (line) {
-      // Authored glitch text: print it whole and untouched. Typing it out would
-      // slice combining marks off their base characters, and glitchText would
-      // scribble over corruption that was already placed deliberately.
-      this.setState({ cells, blocked: true, buddy: IMG.GLITCH, bubble: line, rawBubble: true });
-      this.setState({ typedLen: line.length });
-      this.later(() => this.end('death'), 2600);
-      return;
-    }
-
-    this.setState({ cells, blocked: true, buddy: IMG.GLITCH, bubble: '어디가' });
-    let n = 1;
-    const iv = setInterval(() => {
-      n++;
-      this.setState({ bubble: '어디가'.repeat(Math.min(n, 14)) });
-    }, 100);
-    this.intervals.push(iv);
-    this.later(() => {
-      clearInterval(iv);
-      this.end('death');
-    }, 1600);
-  }
 
   private roundClear() {
     const s = this.state;
     if (s.round === 1) {
-      this.loading('합격이야! 넌 진짜 배울 자격이 있어.', IMG.WAVE, '#0aa300', 2500, () => this.startRound(2));
+      this.loading('합격이야! 넌 자격이 충분해!', IMG.WAVE, '#0aa300', 5000, () => this.startRound(2));
     } else if (s.round === 2) {
       this.loading(
-        '…3줄 다 맞췄네. 단어들을 전부 기억하고 있구나?\n다음엔 더 재미있을 거야.',
+        '세 줄 다 채웠네. 단어를 전부 기억하고 있구나?\n다음은… 조금 다를 거야.',
         IMG.SATISFIED,
         '#5c1a0a',
-        3000,
+        5500,
         () => this.startRound(3),
       );
     } else {
@@ -760,10 +763,10 @@ export class BuddyGame {
       this.later(
         () =>
           this.loading(
-            '실패해도 상관없어요. 어차피 데려갈 거였으니까.',
+            '실패해도 상관없어. 어차피 데려갈 거였으니까.',
             IMG.HORROR,
             '#2a0606',
-            3600,
+            5500,
             () => this.startRound(3),
             'fail',
           ),
@@ -800,7 +803,7 @@ export class BuddyGame {
   private end(kind: EndingKind) {
     this.clear();
     recordEnding(kind);
-    const lines = ENDING_SCRIPTS[kind](this.state.name || 'PLAYER_1');
+    const lines = ENDING_SCRIPTS[kind]();
     this.setState({ ending: kind, blocked: true, bubble: '', crash: 0, buddy: IMG.HORROR });
     this.later(() => this.endLine(lines, 0), 700);
   }
@@ -847,8 +850,7 @@ export class BuddyGame {
         this.later(() => {
           // Beat 3: gone — and the notepad is already typing itself.
           this.setState({ scare: false });
-          const nm = (this.state.name || 'PLAYER_1').toUpperCase();
-          this.deskType(DESK_SCRIPTS.caught(nm).join('\n'), () =>
+          this.deskType(DESK_SCRIPTS.caught().join('\n'), () =>
             this.later(() => this.setState({ deskDialog: true }), 900),
           );
         }, 900);

@@ -138,7 +138,7 @@ export function PlayScreen({ state, game, d }: { state: GameState; game: BuddyGa
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           {crash < 2 && (
             <span style={V.headerMetaStyle(d)}>
-              {'ROUND ' + state.round + '  /  ' + (state.name || 'PLAYER_1').toUpperCase()}
+              {'ROUND ' + state.round}
             </span>
           )}
           {showHome && <SettingsMenu game={game} d={d} />}
