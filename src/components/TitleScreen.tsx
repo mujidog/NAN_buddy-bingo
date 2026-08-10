@@ -1,13 +1,35 @@
 import type { BuddyGame } from '../game/BuddyGame';
 import { IMG } from '../game/data';
-import { PIXEL_FONT, bevel } from '../ui';
+import { KO_FONT, PIXEL_FONT, bevel } from '../ui';
 import { SettingsMenu } from './SettingsMenu';
 
+/** Win95 status-bar cell. */
+function Cell({ children, flex }: { children: string; flex: number }) {
+  return (
+    <div
+      style={{
+        flex,
+        ...bevel('down', 2),
+        padding: '6px 14px',
+        fontFamily: KO_FONT,
+        fontSize: 19,
+        color: '#3a3a3a',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 /**
- * Title, Buddy, START. The fake `NewPlayer.exe` window around the button was
- * only ever framing the name field; with the field gone it was a window titled
- * after something that no longer happens. The gear stays — it is the only way
- * to the ending collection — but sits in the corner rather than in chrome.
+ * Title, Buddy, START — one centred column. The screen read empty not because
+ * things were missing but because the three elements sat in three different
+ * corners with a field of green between them; filling that gap with extra
+ * panels only made it a busier empty. Buddy is the product, so he takes the
+ * middle at the size a mascot on a box cover would be, and the other two stack
+ * on his axis. The status bar closes the bottom edge.
  */
 export function TitleScreen({ game }: { game: BuddyGame }) {
   return (
@@ -21,10 +43,12 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
       <div
         style={{
           position: 'absolute',
-          left: 370,
-          top: 44,
-          width: 700,
-          height: 110,
+          // 6px bevel on each side, so the border box is 812 — offset to keep
+          // the banner on the same 720 axis as Buddy and the button
+          left: 314,
+          top: 50,
+          width: 800,
+          height: 120,
           background: '#c0c0c0',
           ...bevel('up', 6),
           display: 'flex',
@@ -32,7 +56,7 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
           justifyContent: 'center',
         }}
       >
-        <span style={{ fontFamily: PIXEL_FONT, fontSize: 34, color: '#026e00', letterSpacing: 2 }}>
+        <span style={{ fontFamily: PIXEL_FONT, fontSize: 38, color: '#026e00', letterSpacing: 2 }}>
           BUDDY'S RETRO BINGO
         </span>
       </div>
@@ -40,7 +64,7 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
       <img
         src={IMG.WAVE}
         alt="Buddy"
-        style={{ position: 'absolute', left: 120, top: 330, width: 340, height: 400, objectFit: 'contain' }}
+        style={{ position: 'absolute', left: 480, top: 210, width: 480, height: 565, objectFit: 'contain' }}
       />
 
       <button
@@ -48,10 +72,10 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
         onClick={() => game.begin()}
         style={{
           position: 'absolute',
-          left: 700,
-          top: 560,
-          width: 440,
-          height: 104,
+          left: 490,
+          top: 810,
+          width: 460,
+          height: 110,
           background: '#c0c0c0',
           ...bevel('up', 7),
           fontFamily: PIXEL_FONT,
@@ -63,6 +87,26 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
       >
         START
       </button>
+
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 52,
+          background: '#c0c0c0',
+          ...bevel('up', 3),
+          display: 'flex',
+          alignItems: 'stretch',
+          gap: 8,
+          padding: 8,
+        }}
+      >
+        <Cell flex={3}>BUDDY SOFT © 1998</Cell>
+        <Cell flex={4}>어린이 영어 학습 프로그램</Cell>
+        <Cell flex={1}>v1.0</Cell>
+      </div>
 
       <div style={{ position: 'absolute', right: 28, top: 28 }}>
         {/* nothing to quit back to on the title screen */}
