@@ -323,12 +323,16 @@ export class BuddyGame {
     document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
     // the same click that unlocks audio for the page
     audio.bgm('main');
+    audio.prefetchSfx('load'); // wanted whole and measured by the first round change
     this.introDone = false;
     this.setState({ homeGone: false, screen: 'play' }, () => this.startRound(this.config.startRound));
   }
 
   startRound(round: Round) {
     this.clear();
+
+    // the loading jingle does not follow the player into the round
+    audio.stopRepeat();
 
     // the heart clock starts here, not at the first question
     this.answerMs = 0;
@@ -814,6 +818,7 @@ export class BuddyGame {
     kind: 'clear' | 'fail' = 'clear',
   ) {
     this.clear();
+    audio.sfxTimes('load', 3);
     this.setState({ screen: 'loading', bubble: text, buddy: img, loadBg: bg, loadKind: kind, loadMs: ms });
     // then() is startRound, which switches the screen itself. Flipping to 'play'
     // here first painted one frame of the round that just ended — the board and

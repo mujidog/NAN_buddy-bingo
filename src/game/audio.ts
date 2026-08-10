@@ -15,7 +15,7 @@ import { loadSave } from './save';
 
 /** One track per round, plus the one that plays over the desktop. */
 export type Bgm = 'main' | 'dark' | 'round3' | 'end';
-export type Sfx = 'correct' | 'wrong' | 'death' | 'notepad';
+export type Sfx = 'correct' | 'wrong' | 'death' | 'notepad' | 'load';
 
 const BGM_VOL = 0.4;
 const SFX_VOL = 0.75;
@@ -45,6 +45,15 @@ export function prefetch(name: Bgm) {
   el(`bgm_${name}`);
 }
 
+/**
+ * Same, for a cue. The loading jingle needs it for a second reason: `sfxTimes`
+ * spaces its repeats by `duration`, which reads NaN until metadata lands, so a
+ * cold first play fell back to a 900ms guess and the triple came out lopsided.
+ */
+export function prefetchSfx(name: Sfx) {
+  el(`sfx_${name}`);
+}
+
 /** Fire and forget. Restarts if the cue is already sounding. */
 export function sfx(name: Sfx) {
   if (!on) return;
@@ -52,6 +61,37 @@ export function sfx(name: Sfx) {
   a.volume = SFX_VOL;
   a.currentTime = 0;
   a.play().catch(() => {});
+}
+
+let repeatT: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Play a cue back to back, `times` in all — the loading screen's jingle. Chained
+ * off a timer rather than the `ended` event so a cue that fails to decode cannot
+ * stall the chain, and so a second call cleanly replaces a run still in flight.
+ */
+export function sfxTimes(name: Sfx, times: number) {
+  clearTimeout(repeatT);
+  if (!on || times < 1) return;
+
+  const a = el(`sfx_${name}`);
+  let left = times;
+  const go = () => {
+    a.volume = SFX_VOL;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+    if (--left <= 0) return;
+    // duration is only known once metadata lands; the fallback just has to be
+    // long enough not to cut the clip off on the first play of a cold load
+    const gap = Number.isFinite(a.duration) && a.duration > 0 ? a.duration * 1000 : 900;
+    repeatT = setTimeout(go, gap);
+  };
+  go();
+}
+
+/** Cut a repeat short — the loading screen handing over to a round. */
+export function stopRepeat() {
+  clearTimeout(repeatT);
 }
 
 /**
