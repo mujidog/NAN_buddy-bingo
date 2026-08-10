@@ -585,8 +585,8 @@ export class BuddyGame {
     // round straight through: three hearts, sixty seconds each, and answering
     // does not buy time back. Resetting per question made it a per-answer timer
     // that a slow reader could never fall behind on.
-    // rounds that ship their own riddles use them; round 3 has none, so it falls
-    // back to the generic "what's X in English?" template
+    // every tile in every round carries its own riddle; there is no generic
+    // "what's X in English?" fallback left to fall back to
     const line = t.c.desc;
     this.setState({ target: t.i, bubble: line, blocked: true, buddy: IMG.TALK });
     this.later(
