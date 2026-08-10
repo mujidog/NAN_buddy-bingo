@@ -3,6 +3,12 @@ import { IMG } from '../game/data';
 import { PIXEL_FONT, bevel } from '../ui';
 import { SettingsMenu } from './SettingsMenu';
 
+/**
+ * Title, Buddy, START. The fake `NewPlayer.exe` window around the button was
+ * only ever framing the name field; with the field gone it was a window titled
+ * after something that no longer happens. The gear stays — it is the only way
+ * to the ending collection — but sits in the corner rather than in chrome.
+ */
 export function TitleScreen({ game }: { game: BuddyGame }) {
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
@@ -37,64 +43,30 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
         style={{ position: 'absolute', left: 120, top: 330, width: 340, height: 400, objectFit: 'contain' }}
       />
 
-      <div
+      <button
+        className="bevel-up"
+        onClick={() => game.begin()}
         style={{
           position: 'absolute',
-          left: 530,
-          top: 390,
-          width: 790,
+          left: 700,
+          top: 560,
+          width: 440,
+          height: 104,
           background: '#c0c0c0',
-          ...bevel('up', 6),
-          padding: '0 0 28px 0',
+          ...bevel('up', 7),
+          fontFamily: PIXEL_FONT,
+          fontSize: 32,
+          color: '#1a1c1c',
+          letterSpacing: 2,
+          cursor: 'pointer',
         }}
       >
-        <div
-          style={{
-            height: 52,
-            background: '#00007b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 10px',
-            margin: 4,
-          }}
-        >
-          <span style={{ fontFamily: PIXEL_FONT, fontSize: 18, color: '#fff' }}>NewPlayer.exe</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* no quit item here — there is nothing to quit back to yet */}
-            <SettingsMenu game={game} canQuit={false} />
-            <span
-            style={{
-              fontFamily: PIXEL_FONT,
-              fontSize: 16,
-              color: '#000',
-              background: '#c0c0c0',
-              ...bevel('up', 3),
-              padding: '6px 12px',
-            }}
-          >
-              x
-            </span>
-          </div>
-        </div>
+        START
+      </button>
 
-        <div style={{ padding: '26px 34px 0 34px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <button
-            className="bevel-up"
-            onClick={() => game.begin()}
-            style={{
-              height: 78,
-              background: '#c0c0c0',
-              ...bevel('up', 6),
-              fontFamily: PIXEL_FONT,
-              fontSize: 26,
-              color: '#1a1c1c',
-              cursor: 'pointer',
-            }}
-          >
-            START
-          </button>
-        </div>
+      <div style={{ position: 'absolute', right: 28, top: 28 }}>
+        {/* nothing to quit back to on the title screen */}
+        <SettingsMenu game={game} canQuit={false} />
       </div>
     </div>
   );

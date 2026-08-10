@@ -1,6 +1,5 @@
 import {
   ANTONYM,
-  ASK,
   BINGO,
   DESK_SCRIPTS,
   ENDING_SCRIPTS,
@@ -39,7 +38,6 @@ export interface Cell {
 
 export interface GameState {
   screen: Screen;
-  name: string;
   round: Round;
   lives: number;
   cells: Cell[];
@@ -80,7 +78,6 @@ export interface GameConfig {
 
 const initialState = (config: GameConfig): GameState => ({
   screen: 'title',
-  name: 'PLAYER_1',
   round: 1,
   lives: config.lives,
   cells: [],
@@ -315,9 +312,6 @@ export class BuddyGame {
   }
 
   // ---------- flow ----------
-  setName(name: string) {
-    this.setState({ name });
-  }
 
   begin() {
     // Fullscreen hides the browser chrome, so the fake desktop at the end is not
@@ -461,7 +455,7 @@ export class BuddyGame {
         step(i + 1);
       };
       this.pendingAdvance = go;
-      this.later(go, 1700 + lines[i].length * 65);
+      this.later(go, T[this.state.round].say + lines[i].length * 85);
     };
     step(0);
   }
@@ -553,7 +547,7 @@ export class BuddyGame {
     }
     // rounds that ship their own riddles use them; round 3 has none, so it falls
     // back to the generic "what's X in English?" template
-    const line = t.c.desc ? t.c.desc : pick(ASK).split('{W}').join(t.c.ko);
+    const line = t.c.desc;
     this.setState({ target: t.i, bubble: line, blocked: true, buddy: IMG.TALK });
     this.later(
       () => this.setState({ blocked: false, buddy: round === 3 ? IMG.HORROR : IMG.IDLE }),

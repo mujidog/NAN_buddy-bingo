@@ -142,17 +142,6 @@ export const SKIP_SCOLD = [
   '…그래. 말 안 할게. 듣고 싶어질 때까지.',
 ];
 
-export const ASK = [
-  '{W}은(는) 영어로 뭐라고 할까?',
-  '{W}! {W}은(는) 영어로 어떻게 말할까?',
-  '{W}을(를) 영어로 나타내는 단어를 골라줘!',
-  '이건 분명 알고 있겠지? {W}을(를) 영어로 말하면 뭘까?',
-  '문제! 문제! {W}의 영어 단어를 골라줘!',
-  '좋아, 다음 문제야! "{W}"을(를) 영어로 찾아봐!',
-  '흠… {W}(이)라면 분명 알고 있을 텐데? 영어로는 뭐였지?',
-  '{W}은(는) 영어로… 뭐였더라? 네가 골라줘.',
-];
-
 export interface RoundVoice {
   ok: string[];
   no: string[];
@@ -257,10 +246,11 @@ export const IMG = {
 } as const;
 
 /** qin = lockout after a question appears, ok/no = beat after an answer, nudge = idle prod. */
-export const T: Record<Round, { qin: number; ok: number; no: number; nudge: number }> = {
-  1: { qin: 400, ok: 2200, no: 2600, nudge: 45000 },
-  2: { qin: 300, ok: 2000, no: 2400, nudge: 40000 },
-  3: { qin: 300, ok: 2000, no: 2400, nudge: 35000 },
+/** `say` is the base a spoken line rests on screen, before its length is added. */
+export const T: Record<Round, { qin: number; ok: number; no: number; nudge: number; say: number }> = {
+  1: { qin: 400, ok: 2200, no: 2600, nudge: 45000, say: 2200 },
+  2: { qin: 300, ok: 2000, no: 2400, nudge: 40000, say: 2500 },
+  3: { qin: 300, ok: 2000, no: 2400, nudge: 35000, say: 3000 },
 };
 
 /** The 12 winning lines of a 5x5 board: 5 rows, 5 columns, 2 diagonals. */
