@@ -522,7 +522,12 @@ export class BuddyGame {
   private scheduleGlitch() {
     clearTimeout(this.glitchT);
     const d = this.dread();
-    if (d < 0.12) {
+    // Round 1 is the game Buddy is pretending to run, and nothing about him may
+    // look wrong in it. Dread still climbs with time and correct answers, so the
+    // 0.12 threshold alone let the melted face start flashing partway through —
+    // unprompted, with nothing in the round to explain it. The mask comes off in
+    // round 2 onward, and on the round-1 failure beat, which is written for it.
+    if (this.state.round === 1 || d < 0.12) {
       this.glitchT = setTimeout(() => this.scheduleGlitch(), 4000);
       return;
     }
