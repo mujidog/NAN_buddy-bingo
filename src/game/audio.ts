@@ -125,6 +125,20 @@ export function bgm(next: Bgm | null) {
   if (on) a.play().catch(() => {});
 }
 
+/**
+ * Everything off. `bgm(null)` only takes the looping track down, and the
+ * notepad cue runs 21 seconds — long enough to follow the player back to the
+ * title screen and keep typing there. Leaving a screen means leaving its sound.
+ */
+export function silence() {
+  clearTimeout(repeatT);
+  bgm(null);
+  cache.forEach((a) => {
+    a.pause();
+    a.currentTime = 0;
+  });
+}
+
 /** The options toggle. Muting holds the track's position so unmuting resumes it. */
 export function setSoundOn(v: boolean) {
   on = v;

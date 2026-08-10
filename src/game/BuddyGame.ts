@@ -24,6 +24,9 @@ import { recordEnding } from './save';
 /** One track per round. Swapping mid-round landed on nothing and just sounded like a glitch. */
 const ROUND_BGM = { 1: 'main', 2: 'dark', 3: 'round3' } as const;
 
+/** The faces round 3 has no business showing. See setState. */
+const FRIENDLY = new Set<string>([IMG.IDLE, IMG.TALK, IMG.HAPPY, IMG.SATISFIED, IMG.WORRY, IMG.WAVE]);
+
 export type Screen = 'title' | 'play' | 'loading' | 'blackout' | 'desktop';
 
 export interface Cell {
@@ -164,12 +167,22 @@ export class BuddyGame {
 
   getSnapshot = () => this.state;
 
+  /**
+   * Round 3 has no friendly face. Half a dozen call sites still hand over the
+   * cheerful sprites — a correct answer, a spoken line, the beat after a
+   * question — and each one puts the mascot back for a second in the round
+   * that exists to prove he never was one. GLITCH is not in here: the melted
+   * face is his, and round 3 is where it belongs.
+   */
   private setState(
     patch: Partial<GameState> | ((s: GameState) => Partial<GameState>),
     done?: () => void,
   ) {
     const next = typeof patch === 'function' ? patch(this.state) : patch;
     this.state = { ...this.state, ...next };
+    if (this.state.round === 3 && this.state.screen === 'play' && FRIENDLY.has(this.state.buddy)) {
+      this.state = { ...this.state, buddy: IMG.HORROR };
+    }
     // a new line restarts the typewriter, and is glitched again unless the
     // caller says otherwise in the same patch
     if (this.lastBubble !== this.state.bubble) {
@@ -232,7 +245,7 @@ export class BuddyGame {
 
   dispose() {
     this.mounted = false;
-    audio.bgm(null);
+    audio.silence();
     window.removeEventListener('keydown', this.onKey);
     this.intervals.forEach(clearInterval);
     this.intervals = [];
@@ -423,8 +436,9 @@ export class BuddyGame {
 
   private toTitle() {
     this.clear();
-    // the title is silent until START, the same as on a cold load
-    audio.bgm(null);
+    // the title is silent until START, the same as on a cold load — cues
+    // included, or the notepad follows you back and keeps typing over it
+    audio.silence();
     this.setState({
       screen: 'title',
       buddy: IMG.WAVE,
@@ -443,7 +457,7 @@ export class BuddyGame {
 
   restart() {
     this.clear();
-    audio.bgm(null);
+    audio.silence();
     this.setState({ screen: 'title', ending: null });
   }
 
@@ -869,7 +883,10 @@ export class BuddyGame {
     this.later(() => this.setState({ crash: 3, shake: true }), 3100);
     this.later(() => this.setState({ shake: false }), 3500);
     this.later(() => this.setState({ crash: 4 }), 4700);
-    this.later(() => this.fakeClose(), 5600);
+    // the dot has to finish burning out before the blackout, or the cut to
+    // black is the thing you notice instead of the screen dying
+    this.later(() => this.setState({ crash: 5 }), 5300);
+    this.later(() => this.fakeClose(), 6300);
   }
 
   /** Pretends the game window closed, then reveals a desktop that was never safe. */

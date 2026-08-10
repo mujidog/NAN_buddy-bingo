@@ -61,14 +61,26 @@ export const stageStyle = (shake: boolean): CSSProperties => ({
  */
 export const crashStageStyle = (c: number): CSSProperties => {
   if (c < 3) return {};
-  const dying = c >= 4;
+  if (c === 3) {
+    return {
+      filter: 'grayscale(.85) brightness(.86) contrast(1.05)',
+      transform: 'none',
+      transformOrigin: 'center center',
+      transition: 'filter 1.1s ease',
+    };
+  }
+  // 4 collapses the picture to a horizontal line; 5 pinches the line to a dot
+  // and lets the dot burn out. Without 5 the line was still lit when the
+  // blackout cut in, which reads as a dropped frame rather than a shutdown.
+  const dot = c >= 5;
   return {
-    filter: `grayscale(${c >= 3 ? 0.85 : 0}) brightness(${dying ? 1.6 : 0.86}) contrast(${dying ? 1.4 : 1.05})`,
-    transform: dying ? 'scaleY(0.004) scaleX(1.04)' : 'none',
+    filter: `grayscale(.85) brightness(${dot ? 3.4 : 1.6}) contrast(1.4)`,
+    transform: `scaleY(0.004) scaleX(${dot ? 0.0016 : 1.04})`,
     transformOrigin: 'center center',
-    transition: dying
-      ? 'transform .45s cubic-bezier(.7,0,.9,.2), filter .45s ease'
-      : 'filter 1.1s ease',
+    opacity: dot ? 0 : 1,
+    transition: dot
+      ? 'transform .34s cubic-bezier(.4,0,.55,1), filter .34s ease, opacity .5s ease .3s'
+      : 'transform .45s cubic-bezier(.7,0,.9,.2), filter .45s ease',
   };
 };
 
