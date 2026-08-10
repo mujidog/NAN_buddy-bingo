@@ -21,8 +21,8 @@ import {
 import * as audio from './audio';
 import { recordEnding } from './save';
 
-/** Round 2 swaps to the darker track at its halfway mark — dread crosses 0.4 here too. */
-const DARK_AT = 4;
+/** One track per round. Swapping mid-round landed on nothing and just sounded like a glitch. */
+const ROUND_BGM = { 1: 'main', 2: 'dark', 3: 'round3' } as const;
 
 export type Screen = 'title' | 'play' | 'loading' | 'blackout' | 'desktop';
 
@@ -109,7 +109,7 @@ const initialState = (config: GameConfig): GameState => ({
 });
 
 /** Round 2 gives you this long to answer before the heart it is eating runs out. */
-const ANSWER_SECS = 40;
+const ANSWER_SECS = 60;
 
 /** A round-3 flee tile costs half a heart, so one bad grab is not a third of the run. */
 const FLEE_COST = 0.5;
@@ -205,27 +205,25 @@ export class BuddyGame {
       }, 120),
       setInterval(() => {
         const s = this.state;
-        if (s.screen !== 'play' || s.blocked) {
-          this.lastTick = 0; // paused: do not bill the player for Buddy's talking
+
+        // Round 2 is the only round on a clock. Round 3 has none — its hearts go
+        // to the flee tiles, and a timer on top of those left no room to play.
+        if (s.screen !== 'play' || s.round !== 2) {
+          this.lastTick = 0;
           return;
         }
 
-        // Round 2: the answer clock. The current heart drains over ANSWER_SECS
-        // of thinking time and is actually spent when it empties. Measured off
-        // the clock rather than counted in ticks, because a backgrounded tab
+        // The current heart drains over ANSWER_SECS and is spent when it empties.
+        // The clock starts with the round and keeps running while Buddy talks:
+        // pausing for his dialogue made waiting him out free. Measured off the
+        // wall clock rather than counted in ticks, because a backgrounded tab
         // throttles intervals to a crawl and the drain would stall with it.
-        if (s.round === 2) {
-          const now = Date.now();
-          this.answerMs += this.lastTick ? now - this.lastTick : DECAY_TICK_MS;
-          this.lastTick = now;
-          const decay = this.answerMs / (ANSWER_SECS * 1000);
-          if (decay >= 1) this.timeUp();
-          else this.setState({ decay });
-          return;
-        }
-
-        // Round 3 has no clock. Its hearts go to the flee tiles instead, and a
-        // timer on top of those left too little room to actually play.
+        const now = Date.now();
+        this.answerMs += this.lastTick ? now - this.lastTick : DECAY_TICK_MS;
+        this.lastTick = now;
+        const decay = this.answerMs / (ANSWER_SECS * 1000);
+        if (decay >= 1) this.timeUp();
+        else this.setState({ decay });
       }, DECAY_TICK_MS),
     );
 
@@ -332,11 +330,15 @@ export class BuddyGame {
   startRound(round: Round) {
     this.clear();
 
-    // Round 3 has no track of its own — round 2's darker music carries through,
-    // so the rounds read as one continuous descent. Set it here rather than
-    // relying on round 2 having got there: failing round 2 early skips DARK_AT.
-    if (round === 2) audio.prefetch('dark');
-    if (round === 3) audio.bgm('dark');
+    // the heart clock starts here, not at the first question
+    this.answerMs = 0;
+    this.lastTick = 0;
+
+    // The music turns over with the round, at the same beat the board and the
+    // dread do. It used to change partway through round 2, which had nothing to
+    // land on and just sounded like the track had broken.
+    audio.bgm(ROUND_BGM[round]);
+    if (round < 3) audio.prefetch(ROUND_BGM[(round + 1) as Round]);
 
     const bank = shuffle(WORDS[round]).slice(0, 25);
     const cells: Cell[] = bank.map((w) => ({
@@ -561,12 +563,10 @@ export class BuddyGame {
     if (!open.length) return this.roundFail();
 
     const t = pick(open);
-    // every round-2 question restarts the answer clock
-    if (round === 2) {
-      this.answerMs = 0;
-      this.lastTick = 0;
-      if (this.state.decay !== 0) this.setState({ decay: 0 });
-    }
+    // The round-2 clock is not restarted here. It runs from the start of the
+    // round straight through: three hearts, sixty seconds each, and answering
+    // does not buy time back. Resetting per question made it a per-answer timer
+    // that a slow reader could never fall behind on.
     // rounds that ship their own riddles use them; round 3 has none, so it falls
     // back to the generic "what's X in English?" template
     const line = t.c.desc;
@@ -622,7 +622,6 @@ export class BuddyGame {
     const buddy = s.round === 3 ? IMG.SATISFIED : streak >= 3 ? IMG.SATISFIED : IMG.HAPPY;
 
     audio.sfx('correct');
-    if (s.round === 2 && count === DARK_AT) audio.bgm('dark');
 
     this.setState({
       cells,

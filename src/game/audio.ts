@@ -13,7 +13,8 @@
  */
 import { loadSave } from './save';
 
-export type Bgm = 'main' | 'dark' | 'end';
+/** One track per round, plus the one that plays over the desktop. */
+export type Bgm = 'main' | 'dark' | 'round3' | 'end';
 export type Sfx = 'correct' | 'wrong' | 'death' | 'notepad';
 
 const BGM_VOL = 0.4;

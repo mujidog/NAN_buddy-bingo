@@ -161,18 +161,18 @@ input {
  * does not. Transitions stay (near-instant) so state changes are still legible.
  */
 @media (prefers-reduced-motion: reduce) {
-  *,
+  /*
+   * The loading bar is progress, not decoration, so it is exempt — and it has to
+   * be exempted *here*, by not matching, rather than re-enabled in a later rule.
+   * `animation-duration: revert` rolls back to the user-agent value (0s), not to
+   * the element's own inline duration, so the bar finished before it started and
+   * sat permanently full.
+   */
+  *:not([style*='loadfill']):not([style*='loadstall']),
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  /* the loading bar is progress, not decoration — let it run */
-  [style*='loadfill'],
-  [style*='loadstall'] {
-    animation-duration: revert !important;
-    animation-iteration-count: 1 !important;
   }
 }
