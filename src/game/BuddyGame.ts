@@ -109,6 +109,9 @@ const initialState = (config: GameConfig): GameState => ({
 
 /** Round 2 gives you this long to answer before the heart it is eating runs out. */
 const ANSWER_SECS = 40;
+
+/** A round-3 flee tile costs half a heart, so one bad grab is not a third of the run. */
+const FLEE_COST = 0.5;
 const DECAY_TICK_MS = 100;
 
 /** Dread floor and range per round — round 3 starts already deep in the red. */
@@ -641,7 +644,7 @@ export class BuddyGame {
     clearTimeout(this.nudgeT);
     const s = this.state;
     const cell = s.cells[i];
-    const lives = s.lives - 1;
+    const lives = Math.max(0, s.lives - FLEE_COST);
     const cells = s.cells.slice();
     cells[i] = { ...cells[i], dead: true };
 
@@ -694,7 +697,7 @@ export class BuddyGame {
       streak: 0,
       blocked: true,
       buddy,
-      bubble: lives === 1 ? SAY[s.round].last : pick(SAY[s.round].no),
+      bubble: lives > 0 && lives <= 1 ? SAY[s.round].last : pick(SAY[s.round].no),
     }));
     if (s.round === 2) this.later(() => this.setState({ buddy: IMG.WORRY }), 100);
 
