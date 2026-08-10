@@ -18,7 +18,11 @@ import {
   type EndingKind,
   type Round,
 } from './data';
+import * as audio from './audio';
 import { recordEnding } from './save';
+
+/** Round 2 swaps to the darker track at its halfway mark — dread crosses 0.4 here too. */
+const DARK_AT = 4;
 
 export type Screen = 'title' | 'play' | 'loading' | 'blackout' | 'desktop';
 
@@ -230,6 +234,7 @@ export class BuddyGame {
 
   dispose() {
     this.mounted = false;
+    audio.bgm(null);
     window.removeEventListener('keydown', this.onKey);
     this.intervals.forEach(clearInterval);
     this.intervals = [];
@@ -318,12 +323,21 @@ export class BuddyGame {
     // sitting inside an obvious tab. Must be called from the click that started
     // the game — browsers only grant it on a user gesture. Failure is fine.
     document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
+    // the same click that unlocks audio for the page
+    audio.bgm('main');
     this.introDone = false;
     this.setState({ homeGone: false, screen: 'play' }, () => this.startRound(this.config.startRound));
   }
 
   startRound(round: Round) {
     this.clear();
+
+    // Round 3 has no track of its own — round 2's darker music carries through,
+    // so the rounds read as one continuous descent. Set it here rather than
+    // relying on round 2 having got there: failing round 2 early skips DARK_AT.
+    if (round === 2) audio.prefetch('dark');
+    if (round === 3) audio.bgm('dark');
+
     const bank = shuffle(WORDS[round]).slice(0, 25);
     const cells: Cell[] = bank.map((w) => ({
       word: w[0],
@@ -403,6 +417,8 @@ export class BuddyGame {
 
   private toTitle() {
     this.clear();
+    // the title is silent until START, the same as on a cold load
+    audio.bgm(null);
     this.setState({
       screen: 'title',
       buddy: IMG.WAVE,
@@ -421,6 +437,7 @@ export class BuddyGame {
 
   restart() {
     this.clear();
+    audio.bgm(null);
     this.setState({ screen: 'title', ending: null });
   }
 
@@ -599,6 +616,9 @@ export class BuddyGame {
     const count = s.correctCount + 1;
     const buddy = s.round === 3 ? IMG.SATISFIED : streak >= 3 ? IMG.SATISFIED : IMG.HAPPY;
 
+    audio.sfx('correct');
+    if (s.round === 2 && count === DARK_AT) audio.bgm('dark');
+
     this.setState({
       cells,
       streak,
@@ -683,6 +703,7 @@ export class BuddyGame {
       cells[i] = { ...cells[i], wrong: true };
     }
 
+    audio.sfx('wrong');
     this.shakeStage();
     this.setState((st) => ({
       cells,
@@ -735,6 +756,11 @@ export class BuddyGame {
   private roundFail() {
     const s = this.state;
     this.clear();
+
+    // The cue is for the hearts running out, not for a board that merely became
+    // unwinnable — and round 3 spends its hearts on flee tiles, which have their
+    // own reaction, so it stays out of this.
+    if (s.lives <= 0 && s.round !== 3) audio.sfx('death');
 
     if (s.round === 1) {
       this.setState({ blocked: true, buddy: IMG.WORRY, bubble: '…이 정도도 못 하는구나.' });
@@ -822,6 +848,9 @@ export class BuddyGame {
 
   /** Hearts go, then the tiles, then the title bar admits it. Then the tube dies. */
   private crashSequence() {
+    // The music is part of the program, so it dies with it. The silence runs
+    // through the blackout and only breaks when the desktop appears.
+    audio.bgm(null);
     this.setState({ crash: 1 });
     this.later(() => this.setState({ crash: 2 }), 1500);
     this.later(() => this.setState({ crash: 3, shake: true }), 3100);
@@ -839,13 +868,16 @@ export class BuddyGame {
     this.later(() => {
       // Beat 1: an ordinary desktop, and nothing happens. Long enough that the
       // player stops bracing and starts wondering whether the game really quit.
+      audio.bgm('end');
       this.setState({ screen: 'desktop' });
       this.later(() => {
         // Beat 2: he is suddenly filling the screen.
         this.setState({ scare: true, shake: true });
         this.later(() => this.setState({ shake: false }), 400);
         this.later(() => {
-          // Beat 3: gone — and the notepad is already typing itself.
+          // Beat 3: gone — and the notepad is already typing itself. The window
+          // appears the moment there is text to put in it, so the cue lands here.
+          audio.sfx('notepad');
           this.setState({ scare: false });
           this.deskType(DESK_SCRIPTS.caught().join('\n'), () =>
             this.later(() => this.setState({ deskDialog: true }), 900),

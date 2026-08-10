@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import type { BuddyGame } from '../game/BuddyGame';
+import { setSoundOn } from '../game/audio';
 import { ALL_ENDINGS, loadSave, setSound } from '../game/save';
 import { KO_FONT, PIXEL_FONT, bevel } from '../ui';
 
@@ -107,7 +108,11 @@ export function SettingsMenu({
                   <Row
                     label="소리"
                     value={save.sound ? 'ON' : 'OFF'}
-                    onClick={() => setSave(setSound(!save.sound))}
+                    onClick={() => {
+                      const next = !save.sound;
+                      setSoundOn(next); // silence now; setSound only records it
+                      setSave(setSound(next));
+                    }}
                   />
                   {canQuit && (
                     <Row
