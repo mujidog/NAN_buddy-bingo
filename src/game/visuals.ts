@@ -117,6 +117,25 @@ export const vignetteStyle = (d: number): CSSProperties => ({
   pointerEvents: 'none',
   background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,.9) 100%)',
   opacity: 0.12 + d * 0.62,
+  // deep in, the dark stops sitting still and starts breathing
+  transformOrigin: 'center',
+  animation: d > 0.75 ? 'breathe 5.5s ease-in-out infinite' : 'none',
+});
+
+/**
+ * Round 3 only: a pulse under the whole frame. Nothing in the fiction is beating
+ * — that is the point. It sits on top of the board but is fully transparent
+ * through the middle, so it never costs legibility.
+ */
+export const pulseStyle = (): CSSProperties => ({
+  position: 'absolute',
+  inset: 0,
+  pointerEvents: 'none',
+  zIndex: 6,
+  background: 'radial-gradient(ellipse at 50% 45%, rgba(150,0,0,0) 30%, rgba(140,0,0,.8) 100%)',
+  mixBlendMode: 'screen',
+  opacity: 0,
+  animation: 'heartbeat 1.6s ease-out infinite',
 });
 
 export const scanStyle = (d: number): CSSProperties => ({
@@ -199,6 +218,10 @@ export const buddyStyle = (d: number): CSSProperties => ({
   objectPosition: 'bottom',
   transformOrigin: 'bottom center',
   transform: `scale(${(1 + d * 0.14).toFixed(3)})`,
+  // Round 3 only. Two minutes of ease-out, so he closes most of the distance
+  // early and then creeps — you notice he is bigger without catching him move.
+  // The keyframe starts at 1.12 to meet the static scale it replaces.
+  animation: d > 0.75 ? 'loom 120s ease-out both' : 'none',
   filter: `saturate(${(1 - d * 0.35).toFixed(2)}) contrast(${(1 + d * 0.25).toFixed(2)})`,
 });
 

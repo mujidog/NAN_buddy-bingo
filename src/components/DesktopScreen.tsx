@@ -4,7 +4,43 @@ import { KO_FONT, MONO_FONT, PIXEL_FONT, bevel } from '../ui';
 
 const DARK = '#6b6b6b';
 
-function DesktopIcon({ label, color, pixel, onClick }: { label: string; color: string; pixel?: boolean; onClick?: () => void }) {
+/**
+ * Drawn rather than blocked in. Three flat rectangles labelled 내 컴퓨터 /
+ * 휴지통 / BUDDY.exe read as unfinished art, which is the one thing this screen
+ * cannot afford — the whole beat depends on the player believing, for a couple
+ * of seconds, that the game really quit and this is their own machine.
+ */
+const PIX = { shapeRendering: 'crispEdges' as const, width: 60, height: 54 };
+
+const MONITOR = (
+  <svg viewBox="0 0 60 54" {...PIX}>
+    <rect x="3" y="3" width="54" height="36" fill="#c8c8c8" stroke="#000" strokeWidth="3" />
+    <rect x="8" y="8" width="44" height="26" fill="#1b6ea8" />
+    <rect x="8" y="8" width="44" height="8" fill="#3b93d0" opacity=".55" />
+    <rect x="24" y="42" width="12" height="5" fill="#a8a8a8" stroke="#000" strokeWidth="3" />
+    <rect x="14" y="47" width="32" height="6" fill="#c8c8c8" stroke="#000" strokeWidth="3" />
+  </svg>
+);
+
+const TRASH = (
+  <svg viewBox="0 0 60 54" {...PIX}>
+    <rect x="18" y="6" width="24" height="5" fill="#b8b8b8" stroke="#000" strokeWidth="3" />
+    <path d="M14 13 h32 l-4 38 h-24 z" fill="#b8b8b8" stroke="#000" strokeWidth="3" strokeLinejoin="round" />
+    <path d="M24 20 v26 M30 20 v26 M36 20 v26" stroke="#6f6f6f" strokeWidth="3" />
+  </svg>
+);
+
+function DesktopIcon({
+  icon,
+  label,
+  pixel,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  pixel?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <div
       onClick={onClick}
@@ -17,14 +53,9 @@ function DesktopIcon({ label, color, pixel, onClick }: { label: string; color: s
         cursor: onClick ? 'pointer' : 'default',
       }}
     >
-      <div
-        style={{
-          width: 56,
-          height: 48,
-          background: color,
-          ...bevel('up', 4, pixel ? '#5a0000' : DARK, pixel ? '#ff8a8a' : '#fff'),
-        }}
-      />
+      <div style={{ width: 60, height: 54, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        {icon}
+      </div>
       <span
         style={{
           fontFamily: pixel ? PIXEL_FONT : KO_FONT,
@@ -66,13 +97,49 @@ export function DesktopScreen({ state, game }: { state: GameState; game: BuddyGa
   // The desktop sits empty until the scare; the notepad turning up afterwards is
   // what reads as "he opened it", instead of a window typing to nobody.
   const notepadOpen = state.deskText !== '' || state.deskDialog;
+  // Everything after the scare happens on a desktop that did not go back to
+  // normal. Before it, the wallpaper has to be boringly ordinary or the beat
+  // gives itself away.
+  const after = notepadOpen;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: wallpaper(HOST), overflow: 'hidden' }}>
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background: after ? 'radial-gradient(ellipse at 50% 38%, #2b0707 0%, #120303 60%, #050101 100%)' : wallpaper(HOST),
+        transition: 'background 2.2s ease',
+        overflow: 'hidden',
+      }}
+    >
+      {/* he is still there, just under the brightness floor */}
+      {after && (
+        <img
+          src="assets/buddy_horror.png"
+          alt=""
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '46%',
+            transform: 'translate(-50%,-50%) scale(1.25)',
+            width: 1100,
+            opacity: 0.12,
+            filter: 'grayscale(.4) contrast(1.3)',
+            pointerEvents: 'none',
+            animation: 'breathe 7s ease-in-out infinite',
+          }}
+        />
+      )}
+
       <div style={{ position: 'absolute', left: 34, top: 34, display: 'flex', flexDirection: 'column', gap: 34 }}>
-        <DesktopIcon label={L.computer} color="#c0c0c0" />
-        <DesktopIcon label={L.trash} color="#9aa39a" />
-        <DesktopIcon label="BUDDY.exe" color="#eb0000" pixel onClick={() => game.restart()} />
+        <DesktopIcon icon={MONITOR} label={L.computer} />
+        <DesktopIcon icon={TRASH} label={L.trash} />
+        <DesktopIcon
+          icon={<img src="assets/buddy_idle.png" alt="" style={{ width: 54, height: 54, objectFit: 'contain' }} />}
+          label="BUDDY.exe"
+          pixel
+          onClick={() => game.restart()}
+        />
       </div>
 
       {state.scare && (

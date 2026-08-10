@@ -142,6 +142,53 @@ input {
   }
 }
 
+/*
+ * Round 3. Three slow, unsynchronised cycles — the dark closing in, a pulse
+ * under the frame, and Buddy getting nearer. Deliberately different periods so
+ * they never line up into a rhythm the player can start predicting.
+ */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.76;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+
+/* systole, a beat, diastole — then a long wait that is slightly too long */
+@keyframes heartbeat {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.55;
+  }
+  14% {
+    opacity: 0.08;
+  }
+  22% {
+    opacity: 0.4;
+  }
+  38%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* He never takes a step. He is just closer than he was. */
+@keyframes loom {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1.36);
+  }
+}
+
 /* Loading bar. A clear round fills; a failed one stalls partway and sits there. */
 @keyframes loadfill {
   from { width: 0; }

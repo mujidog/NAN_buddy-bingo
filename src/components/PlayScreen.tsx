@@ -162,6 +162,9 @@ export function PlayScreen({ state, game, d }: { state: GameState; game: BuddyGa
 
       <BingoBoard state={state} game={game} d={d} />
 
+      {/* over the board, but transparent through the middle where the words are */}
+      {!crash && d > 0.75 && <div style={V.pulseStyle()} />}
+
       {crash >= 3 && <div style={V.crashVeilStyle(crash)} />}
     </div>
   );
