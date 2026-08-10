@@ -818,6 +818,10 @@ export class BuddyGame {
     kind: 'clear' | 'fail' = 'clear',
   ) {
     this.clear();
+    // A loading screen is only ever a round change, so the round that just ended
+    // takes its music with it. The jingle gets the screen to itself and the next
+    // round's track starts with the round, in startRound.
+    audio.bgm(null);
     audio.sfxTimes('load', 3);
     this.setState({ screen: 'loading', bubble: text, buddy: img, loadBg: bg, loadKind: kind, loadMs: ms });
     // then() is startRound, which switches the screen itself. Flipping to 'play'

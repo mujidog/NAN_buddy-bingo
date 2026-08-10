@@ -1,35 +1,29 @@
 import type { BuddyGame } from '../game/BuddyGame';
 import { IMG } from '../game/data';
-import { KO_FONT, PIXEL_FONT, bevel } from '../ui';
+import { PIXEL_FONT, bevel } from '../ui';
 import { SettingsMenu } from './SettingsMenu';
 
-/** Win95 status-bar cell. */
-function Cell({ children, flex }: { children: string; flex: number }) {
-  return (
-    <div
-      style={{
-        flex,
-        ...bevel('down', 2),
-        padding: '6px 14px',
-        fontFamily: KO_FONT,
-        fontSize: 19,
-        color: '#3a3a3a',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
+/**
+ * Hard black outline on the pixel title. `paint-order` keeps the stroke behind
+ * the fill so a 7px outline does not eat into the letterforms; the text-shadow
+ * ring is the fallback for engines that ignore it on HTML text.
+ */
+const OUTLINE = (color: string) => ({
+  fontFamily: PIXEL_FONT,
+  fontSize: 76,
+  color,
+  WebkitTextStroke: '7px #000',
+  paintOrder: 'stroke fill' as const,
+  textShadow: '4px 4px 0 rgba(0,0,0,.45)',
+  letterSpacing: 4,
+});
 
 /**
- * Title, Buddy, START — one centred column. The screen read empty not because
- * things were missing but because the three elements sat in three different
- * corners with a field of green between them; filling that gap with extra
- * panels only made it a busier empty. Buddy is the product, so he takes the
- * middle at the size a mascot on a box cover would be, and the other two stack
- * on his axis. The status bar closes the bottom edge.
+ * The box-art title: name on the sky, mascot standing on the grass, and a
+ * marquee strip across the bottom with the button in it. No window chrome —
+ * the fake `NewPlayer.exe` frame was left over from a name field that no
+ * longer exists, and framing the whole screen in it made the title look like
+ * a dialog rather than the front of a product.
  */
 export function TitleScreen({ game }: { game: BuddyGame }) {
   return (
@@ -40,76 +34,80 @@ export function TitleScreen({ game }: { game: BuddyGame }) {
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
       />
 
-      <div
-        style={{
-          position: 'absolute',
-          // 6px bevel on each side, so the border box is 812 — offset to keep
-          // the banner on the same 720 axis as Buddy and the button
-          left: 314,
-          top: 50,
-          width: 800,
-          height: 120,
-          background: '#c0c0c0',
-          ...bevel('up', 6),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <span style={{ fontFamily: PIXEL_FONT, fontSize: 38, color: '#026e00', letterSpacing: 2 }}>
-          BUDDY'S RETRO BINGO
-        </span>
-      </div>
-
-      <img
-        src={IMG.WAVE}
-        alt="Buddy"
-        style={{ position: 'absolute', left: 480, top: 210, width: 480, height: 565, objectFit: 'contain' }}
-      />
-
-      <button
-        className="bevel-up"
-        onClick={() => game.begin()}
-        style={{
-          position: 'absolute',
-          left: 490,
-          top: 810,
-          width: 460,
-          height: 110,
-          background: '#c0c0c0',
-          ...bevel('up', 7),
-          fontFamily: PIXEL_FONT,
-          fontSize: 32,
-          color: '#1a1c1c',
-          letterSpacing: 2,
-          cursor: 'pointer',
-        }}
-      >
-        START
-      </button>
-
+      {/* sits in the sky band, above the horizon */}
       <div
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: 0,
-          height: 52,
-          background: '#c0c0c0',
-          ...bevel('up', 3),
+          top: 62,
           display: 'flex',
-          alignItems: 'stretch',
-          gap: 8,
-          padding: 8,
+          justifyContent: 'center',
+          gap: 30,
         }}
       >
-        <Cell flex={3}>BUDDY SOFT © 1998</Cell>
-        <Cell flex={4}>어린이 영어 학습 프로그램</Cell>
-        <Cell flex={1}>v1.0</Cell>
+        <span style={OUTLINE('#eb0000')}>BUDDY</span>
+        <span style={OUTLINE('#0a3ddc')}>BUNNY</span>
+      </div>
+
+      <img
+        src={IMG.IDLE}
+        alt="Buddy"
+        style={{ position: 'absolute', left: 410, top: 210, width: 620, height: 660, objectFit: 'contain' }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          left: 24,
+          right: 24,
+          bottom: 26,
+          height: 100,
+          boxSizing: 'border-box',
+          background: '#c0c0c0',
+          ...bevel('up', 6),
+          padding: 10,
+          display: 'flex',
+          alignItems: 'stretch',
+          gap: 14,
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            background: '#000',
+            ...bevel('down', 4),
+            display: 'flex',
+            alignItems: 'center',
+            paddingLeft: 26,
+            overflow: 'hidden',
+          }}
+        >
+          <span style={{ fontFamily: PIXEL_FONT, fontSize: 27, color: '#ffe000', whiteSpace: 'nowrap' }}>
+            WELCOME, BUDDY! CLICK TO LEARN!
+          </span>
+        </div>
+
+        <button
+          className="bevel-up"
+          onClick={() => game.begin()}
+          style={{
+            width: 250,
+            background: '#c0c0c0',
+            ...bevel('up', 6),
+            fontFamily: PIXEL_FONT,
+            fontSize: 30,
+            color: '#1a1c1c',
+            letterSpacing: 2,
+            cursor: 'pointer',
+          }}
+        >
+          START
+        </button>
       </div>
 
       <div style={{ position: 'absolute', right: 28, top: 28 }}>
-        {/* nothing to quit back to on the title screen */}
+        {/* off the box art, but it is the only way into the ending collection */}
         <SettingsMenu game={game} canQuit={false} />
       </div>
     </div>
