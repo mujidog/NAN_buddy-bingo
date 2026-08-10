@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import * as audio from '../game/audio';
 import type { BuddyGame } from '../game/BuddyGame';
@@ -82,27 +82,44 @@ function Bubble({ line }: { line: { text: string; accent?: string } }) {
   );
 }
 
+/** Step 0 is the product shot; each line then holds long enough to read twice. */
+const HOLD = [1400, 2600, 2600, 2600];
+
 /**
- * The box art, then an intro he walks you through. Step 0 is the product shot —
- * mascot at rest, no bubble, silent, because a browser will not play audio
- * before the player has touched something anyway. The first click both starts
- * the music and starts him talking, so the autoplay rule lands on the beat the
- * screen was going to have regardless.
+ * The box art, then an intro that plays itself — it is patter, not dialogue, so
+ * making the player click through it would turn a greeting into a chore. A
+ * click still skips ahead for anyone who reads faster than the timer.
+ *
+ * Sound is the one thing the timer cannot drive: a browser refuses audio until
+ * the player has touched something. So the music is *attempted* on mount, which
+ * succeeds only if this is a return trip to the title, and every click retries
+ * it. `bgm()` treats a loaded-but-silent track as still owing a play, so the
+ * first attempt that lands inside a real gesture is the one that gets through.
  *
  * START stays live the whole time. Skipping an intro is not a thing to punish.
  */
 export function TitleScreen({ game }: { game: BuddyGame }) {
   const [step, setStep] = useState(0);
   const talking = step > 0;
+  const done = step >= LINES.length;
+
+  useEffect(() => {
+    audio.bgm('main');
+  }, []);
+
+  useEffect(() => {
+    if (step >= LINES.length) return;
+    const t = setTimeout(() => setStep((s) => s + 1), HOLD[step]);
+    return () => clearTimeout(t);
+  }, [step]);
 
   const advance = () => {
-    if (step >= LINES.length) return;
-    if (step === 0) audio.bgm('main'); // this click is the gesture that unlocks it
-    setStep(step + 1);
+    audio.bgm('main'); // a real gesture — the mount attempt may have been refused
+    setStep((s) => Math.min(s + 1, LINES.length));
   };
 
   return (
-    <div style={{ position: 'absolute', inset: 0, cursor: step < LINES.length ? 'pointer' : 'default' }} onClick={advance}>
+    <div style={{ position: 'absolute', inset: 0, cursor: done ? 'default' : 'pointer' }} onClick={advance}>
       <img
         src="assets/bg_forest.png"
         alt=""

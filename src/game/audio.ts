@@ -100,7 +100,14 @@ export function stopRepeat() {
  * restart it.
  */
 export function bgm(next: Bgm | null) {
-  if (next === current) return;
+  if (next === current) {
+    // A blocked autoplay leaves the right track loaded and `current` already
+    // set, so a plain no-op here would mean the track never starts however many
+    // times it is asked for. Retry instead: the first call that happens to sit
+    // inside a user gesture is the one that gets through.
+    if (next && track?.paused && on) track.play().catch(() => {});
+    return;
+  }
   current = next;
 
   if (track) {
